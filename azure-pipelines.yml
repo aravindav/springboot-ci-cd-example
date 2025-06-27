@@ -45,4 +45,4 @@ steps:
       pkill -f 'java -jar' || true
       nohup java -jar /home/azureuser/app/app.jar > /home/azureuser/app/app.log 2>&1 &
     EOF
-  displayName: 'Deploy to VM2'
+  displayName: 'Deploy to the VM2'
