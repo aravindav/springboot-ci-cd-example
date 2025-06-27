@@ -30,7 +30,7 @@ steps:
     options: '-DskipTests -Dsonar.branch.name=""'
 
 - script: |
-    echo "$SSH_PRIVATE_KEY" > key.pem
+    printf "%s" "$SSH_PRIVATE_KEY" > key.pem
     chmod 600 key.pem
 
     echo "Creating app directory on remote VM..."
