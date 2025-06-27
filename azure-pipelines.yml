@@ -7,35 +7,39 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
+  # Using a secure file is recommended for SSH keys, but this follows your original setup.
   SSH_PRIVATE_KEY: $(sshPrivateKey)
-  sonar.branch.name: ''
 
 steps:
+# 1. Prepare SonarQube Analysis Configuration
+# This task configures the scanner before the build runs.
 - task: SonarQubePrepare@5
   inputs:
     SonarQube: 'MySonarQubeService'
-    scannerMode: 'CLI'
-    configMode: 'manual'
-    cliProjectKey: 'springboot-ci-cd'
-    cliSources: 'src'
+    scannerMode: 'Maven' # Crucial change: Set scannerMode to 'Maven'
     extraProperties: |
+      # This property tells SonarQube where to find the compiled Java class files.
       sonar.java.binaries=target
-      sonar.projectName=springboot-ci-cd
-      sonar.host.url=http://20.151.164.85:9000
-      sonar.branch.name=
+      #
+      # REMOVED: 'sonar.branch.name' - This fixes the Community Edition license error.
+      # REMOVED: 'sonar.host.url' and 'sonar.projectName' - These are automatically
+      # configured by the service connection and Maven pom.xml respectively.
+      #
 
+# 2. Build Project and Run SonarQube Analysis with Maven
+# The 'sonar:sonar' goal tells Maven to perform the SonarQube analysis and
+# publish the results to the server.
 - task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
-    goals: 'clean package'
+    goals: 'clean package sonar:sonar' # Crucial change: Added 'sonar:sonar' goal
     options: '-DskipTests'
 
-- task: SonarQubeAnalyze@5
+# NOTE: The SonarQubeAnalyze and SonarQubePublish tasks have been removed.
+# They are not needed when using the 'sonar:sonar' goal in Maven, as it
+# handles both analysis and publishing.
 
-- task: SonarQubePublish@5
-  inputs:
-    pollingTimeoutSec: '300'
-
+# 3. Deploy the application to the Virtual Machine
 - script: |
     echo "$SSH_PRIVATE_KEY" > key.pem
     chmod 600 key.pem
