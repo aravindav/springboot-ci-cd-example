@@ -1,6 +1,3 @@
-#
-# Corrected Azure Pipeline for Spring Boot CI/CD with SonarQube Community Edition
-#
 trigger:
   branches:
     include:
@@ -10,40 +7,35 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  # This variable holds the SSH private key from your pipeline's variable library.
   SSH_PRIVATE_KEY: $(sshPrivateKey)
+  sonar.branch.name: ''
 
 steps:
-# ----------------------------------------------------------------
-# Step 1: Prepare SonarQube Analysis Configuration
-# This task configures the scanner for a Maven project before the build runs.
-# ----------------------------------------------------------------
 - task: SonarQubePrepare@5
   inputs:
     SonarQube: 'MySonarQubeService'
-    scannerMode: 'Maven'   # FIX: Sets the mode to 'Maven' to resolve the 'undefined mode' error.
+    scannerMode: 'CLI'
+    configMode: 'manual'
+    cliProjectKey: 'springboot-ci-cd'
+    cliSources: 'src'
     extraProperties: |
-      # This property tells SonarQube where to find the compiled Java .class files.
       sonar.java.binaries=target
+      sonar.projectName=springboot-ci-cd
+      sonar.host.url=http://20.151.164.85:9000
+      sonar.branch.name=
 
-# ----------------------------------------------------------------
-# Step 2: Build Project & Run SonarQube Analysis with Maven
-# The 'sonar:sonar' goal tells Maven to perform the SonarQube analysis
-# and publish the results directly to the server.
-# ----------------------------------------------------------------
 - task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
-    goals: 'clean package sonar:sonar' # FIX: Adds 'sonar:sonar' to run the analysis.
+    goals: 'clean package'
     options: '-DskipTests'
 
-# NOTE: The old 'SonarQubeAnalyze' and 'SonarQubePublish' tasks have been removed
-# as they are redundant when using the 'sonar:sonar' goal with Maven.
+- task: SonarQubeAnalyze@5
 
-# ----------------------------------------------------------------
-# Step 3: Deploy the application to the Virtual Machine
-# This step remains unchanged from your original file.
-# ----------------------------------------------------------------
+- task: SonarQubePublish@5
+  inputs:
+    pollingTimeoutSec: '300'
+
 - script: |
     echo "$SSH_PRIVATE_KEY" > key.pem
     chmod 600 key.pem
