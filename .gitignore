@@ -1,0 +1,26 @@
+cat <<EOL > .gitignore
+# Maven target directory
+target/
+
+# Log files
+*.log
+
+# Compiled Java classes
+*.class
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+
+# macOS files
+.DS_Store
+
+# Build artifacts
+*.jar
+*.war
+EOL
+
