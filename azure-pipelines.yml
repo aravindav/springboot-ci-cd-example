@@ -27,7 +27,7 @@ steps:
   inputs:
     mavenPomFile: 'pom.xml'
     goals: 'clean verify sonar:sonar'
-    options: '-DskipTests'
+    options: '-DskipTests -Dsonar.branch.name=""'
 
 - script: |
     echo "$SSH_PRIVATE_KEY" > key.pem
