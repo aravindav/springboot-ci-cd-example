@@ -8,6 +8,7 @@ pool:
 
 variables:
   SSH_PRIVATE_KEY: $(sshPrivateKey)
+  sonar.branch.name: ''
 
 steps:
 - task: SonarQubePrepare@5
