@@ -7,7 +7,6 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  SONAR_TOKEN: $(SONAR_TOKEN)
   SSH_PRIVATE_KEY: $(sshPrivateKey)
 
 steps:
@@ -22,7 +21,6 @@ steps:
       sonar.java.binaries=target
       sonar.projectName=springboot-ci-cd
       sonar.host.url=http://20.151.164.85:9000
-      sonar.login=$(SONAR_TOKEN)
 
 - task: Maven@3
   inputs:
