@@ -13,7 +13,7 @@ steps:
 - task: SonarQubePrepare@5
   inputs:
     SonarQube: 'MySonarQubeService'
-    scannerMode: 'CLI'
+    scannerMode: 'Other'
     configMode: 'manual'
     cliProjectKey: 'springboot-ci-cd'
     cliSources: 'src'
@@ -26,14 +26,8 @@ steps:
 - task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
-    goals: 'clean package'
+    goals: 'clean verify sonar:sonar'
     options: '-DskipTests'
-
-- task: SonarQubeAnalyze@5
-
-- task: SonarQubePublish@5
-  inputs:
-    pollingTimeoutSec: '300'
 
 - script: |
     echo "$SSH_PRIVATE_KEY" > key.pem
