@@ -1,0 +1,49 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  SONAR_HOST_URL: 'http://<sonarqube-vm>:9000'
+  SONAR_TOKEN: '<your-sonarqube-token>'
+  SSH_PRIVATE_KEY: $(sshPrivateKey)
+
+steps:
+- task: SonarQubePrepare@5
+  inputs:
+    SonarQube: 'MySonarQubeService'
+    scannerMode: 'CLI'
+    configMode: 'manual'
+    cliProjectKey: 'springboot-ci-cd'
+    cliSources: 'src'
+    extraProperties: |
+      sonar.java.binaries=target
+      sonar.projectName=springboot-ci-cd
+      sonar.host.url=$(SONAR_HOST_URL)
+      sonar.login=$(SONAR_TOKEN)
+
+- task: Maven@3
+  inputs:
+    mavenPomFile: 'pom.xml'
+    goals: 'clean verify'
+    options: '-DskipTests'
+
+- task: SonarQubeAnalyze@5
+
+- task: SonarQubePublish@5
+  inputs:
+    pollingTimeoutSec: '300'
+
+- script: |
+    echo "Copying JAR to VM..."
+    scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no target/*.jar azureuser@<APP_VM_IP>:/home/azureuser/app.jar
+
+    echo "Restarting app on remote VM..."
+    ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no azureuser@<APP_VM_IP> << EOF
+      pkill -f 'java -jar' || true
+      nohup java -jar app.jar > app.log 2>&1 &
+    EOF
+  displayName: 'Deploy to App VM'
