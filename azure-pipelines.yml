@@ -35,13 +35,13 @@ steps:
     chmod 600 $(sshKey.secureFilePath)
 
     echo "Creating app directory on remote VM..."
-    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no azureuser@4.172.227.190 'mkdir -p /home/azureuser/app'
+    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no azureuser@$(APP_VM_IP) 'mkdir -p /home/azureuser/app'
 
     echo "Copying JAR to remote VM..."
-    scp -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no target/*.jar azureuser@4.172.227.190:/home/azureuser/app/app.jar
+    scp -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no target/*.jar azureuser@$(APP_VM_IP):/home/azureuser/app/app.jar
 
     echo "Restarting Spring Boot app..."
-    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no azureuser@4.172.227.190 << EOF
+    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no azureuser@$(APP_VM_IP) << EOF
       pkill -f 'java -jar' || true
       nohup java -jar /home/azureuser/app/app.jar > /home/azureuser/app/app.log 2>&1 &
     EOF
