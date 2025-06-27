@@ -6,9 +6,6 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
-variables:
-  SSH_PRIVATE_KEY: $(sshPrivateKey)
-
 steps:
 - task: SonarQubePrepare@5
   inputs:
@@ -29,18 +26,22 @@ steps:
     goals: 'clean verify sonar:sonar'
     options: '-DskipTests -Dsonar.branch.name=""'
 
+- task: DownloadSecureFile@1
+  name: sshKey
+  inputs:
+    secureFile: 'ci-cd-vm_key.pem'  # replace with exact name if different
+
 - script: |
-    printf "%s" "$SSH_PRIVATE_KEY" > key.pem
-    chmod 600 key.pem
+    chmod 600 $(sshKey.secureFilePath)
 
     echo "Creating app directory on remote VM..."
-    ssh -i key.pem -o StrictHostKeyChecking=no azureuser@4.172.227.190 'mkdir -p /home/azureuser/app'
+    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no azureuser@4.172.227.190 'mkdir -p /home/azureuser/app'
 
     echo "Copying JAR to remote VM..."
-    scp -i key.pem -o StrictHostKeyChecking=no target/*.jar azureuser@4.172.227.190:/home/azureuser/app/app.jar
+    scp -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no target/*.jar azureuser@4.172.227.190:/home/azureuser/app/app.jar
 
     echo "Restarting Spring Boot app..."
-    ssh -i key.pem -o StrictHostKeyChecking=no azureuser@4.172.227.190 << EOF
+    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no azureuser@4.172.227.190 << EOF
       pkill -f 'java -jar' || true
       nohup java -jar /home/azureuser/app/app.jar > /home/azureuser/app/app.log 2>&1 &
     EOF
