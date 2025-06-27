@@ -41,7 +41,7 @@ steps:
     scp -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no target/*.jar azureuser@$4.172.227.190:/home/azureuser/app/app.jar
 
     echo "Restarting Spring Boot app..."
-    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no azureuser@$4.172.227.190 << EOF
+    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no azureuser@4.172.227.190 << EOF
       pkill -f 'java -jar' || true
       nohup java -jar /home/azureuser/app/app.jar > /home/azureuser/app/app.log 2>&1 &
     EOF
