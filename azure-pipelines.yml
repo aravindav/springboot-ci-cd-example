@@ -21,6 +21,7 @@ steps:
       sonar.java.binaries=target
       sonar.projectName=springboot-ci-cd
       sonar.host.url=http://20.151.164.85:9000
+      sonar.branch.name=
 
 - task: Maven@3
   inputs:
