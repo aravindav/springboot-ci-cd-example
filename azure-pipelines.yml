@@ -1,3 +1,6 @@
+#
+# Corrected Azure Pipeline for Spring Boot CI/CD with SonarQube Community Edition
+#
 trigger:
   branches:
     include:
@@ -7,39 +10,40 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  # Using a secure file is recommended for SSH keys, but this follows your original setup.
+  # This variable holds the SSH private key from your pipeline's variable library.
   SSH_PRIVATE_KEY: $(sshPrivateKey)
 
 steps:
-# 1. Prepare SonarQube Analysis Configuration
-# This task configures the scanner before the build runs.
+# ----------------------------------------------------------------
+# Step 1: Prepare SonarQube Analysis Configuration
+# This task configures the scanner for a Maven project before the build runs.
+# ----------------------------------------------------------------
 - task: SonarQubePrepare@5
   inputs:
     SonarQube: 'MySonarQubeService'
-    scannerMode: 'Maven' # Crucial change: Set scannerMode to 'Maven'
+    scannerMode: 'Maven'   # FIX: Sets the mode to 'Maven' to resolve the 'undefined mode' error.
     extraProperties: |
-      # This property tells SonarQube where to find the compiled Java class files.
+      # This property tells SonarQube where to find the compiled Java .class files.
       sonar.java.binaries=target
-      #
-      # REMOVED: 'sonar.branch.name' - This fixes the Community Edition license error.
-      # REMOVED: 'sonar.host.url' and 'sonar.projectName' - These are automatically
-      # configured by the service connection and Maven pom.xml respectively.
-      #
 
-# 2. Build Project and Run SonarQube Analysis with Maven
-# The 'sonar:sonar' goal tells Maven to perform the SonarQube analysis and
-# publish the results to the server.
+# ----------------------------------------------------------------
+# Step 2: Build Project & Run SonarQube Analysis with Maven
+# The 'sonar:sonar' goal tells Maven to perform the SonarQube analysis
+# and publish the results directly to the server.
+# ----------------------------------------------------------------
 - task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
-    goals: 'clean package sonar:sonar' # Crucial change: Added 'sonar:sonar' goal
+    goals: 'clean package sonar:sonar' # FIX: Adds 'sonar:sonar' to run the analysis.
     options: '-DskipTests'
 
-# NOTE: The SonarQubeAnalyze and SonarQubePublish tasks have been removed.
-# They are not needed when using the 'sonar:sonar' goal in Maven, as it
-# handles both analysis and publishing.
+# NOTE: The old 'SonarQubeAnalyze' and 'SonarQubePublish' tasks have been removed
+# as they are redundant when using the 'sonar:sonar' goal with Maven.
 
-# 3. Deploy the application to the Virtual Machine
+# ----------------------------------------------------------------
+# Step 3: Deploy the application to the Virtual Machine
+# This step remains unchanged from your original file.
+# ----------------------------------------------------------------
 - script: |
     echo "$SSH_PRIVATE_KEY" > key.pem
     chmod 600 key.pem
