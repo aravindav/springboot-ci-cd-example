@@ -11,7 +11,7 @@ steps:
   inputs:
     mavenPomFile: 'pom.xml'
     goals: 'clean verify sonar:sonar'
-    options: '-DskipTests -Dsonar.login=$(SONAR_TOKEN)'
+    options: '-DskipTests -Dsonar.login=$(SONAR_TOKEN) -Dsonar.host.url=http://20.151.164.85:9000'
   displayName: 'Build, Verify & SonarQube Analysis'
 
 - task: DownloadSecureFile@1
