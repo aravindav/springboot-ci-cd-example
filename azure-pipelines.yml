@@ -6,6 +6,9 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
+variables:
+- group: ci-cd-secrets
+
 steps:
 - task: Maven@3
   inputs:
