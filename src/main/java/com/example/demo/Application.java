@@ -15,6 +15,6 @@ public class Application {
 
     @GetMapping("/hello")
     public String hello() {
-        return "Hello from Spring Boot - Testing 5";
+        return "Hello from Spring Boot - Testing 6";
     }
 }
