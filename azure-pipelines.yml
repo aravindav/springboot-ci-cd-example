@@ -7,29 +7,17 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- task: SonarQubePrepare@5
-  inputs:
-    SonarQube: 'MySonarQubeService'
-    scannerMode: 'Other'
-    configMode: 'manual'
-    cliProjectKey: 'springboot-ci-cd'
-    cliSources: 'src'
-    extraProperties: |
-      sonar.java.binaries=target
-      sonar.projectName=springboot-ci-cd
-      sonar.host.url=http://20.151.164.85:9000
-      sonar.branch.name=
-
 - task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
     goals: 'clean verify sonar:sonar'
-    options: '-DskipTests -Dsonar.branch.name=""'
+    options: '-DskipTests -Dsonar.login=$(SONAR_TOKEN)'
+  displayName: 'Build, Verify & SonarQube Analysis'
 
 - task: DownloadSecureFile@1
   name: sshKey
   inputs:
-    secureFile: 'ci-cd-vm_key.pem'  # replace with exact name if different
+    secureFile: 'ci-cd-vm_key.pem'  # Update this if your key file name is different
 
 - script: |
     chmod 600 $(sshKey.secureFilePath)
@@ -45,4 +33,4 @@ steps:
       pkill -f 'java -jar' || true
       nohup java -jar /home/azureuser/app/app.jar > /home/azureuser/app/app.log 2>&1 &
     EOF
-  displayName: 'Deploy to the VM2'
+  displayName: 'Deploy to VM2'
