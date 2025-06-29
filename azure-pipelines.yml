@@ -14,34 +14,31 @@ steps:
 - task: DownloadSecureFile@1
   name: mavenSettings
   inputs:
-    secureFile: 'settings.xml'  # Name exactly as uploaded
+    secureFile: 'settings.xml'  # Make sure this matches your secure file name
 
-# Configure Maven settings.xml in agent
+#  Configure Maven settings.xml
 - script: |
     mkdir -p ~/.m2
     cp $(mavenSettings.secureFilePath) ~/.m2/settings.xml
   displayName: 'Configure Maven settings.xml'
 
-# Build, push to JFrog, and run SonarQube analysis
+# Build, push to JFrog, SonarQube analysis
 - task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
     goals: 'clean deploy sonar:sonar'
     options: '-DskipTests -Dsonar.login=$(SONAR_TOKEN) -Dsonar.host.url=http://20.151.164.85:9000'
-  displayName: 'Build, Deploy to JFrog, & SonarQube Analysis'
+  displayName: 'Build, Push to JFrog, & SonarQube Analysis'
 
-# Download SSH private key for VM2
-- task: DownloadSecureFile@1
-  name: sshKey
-  inputs:
-    secureFile: 'ci-cd-vm_key.pem'
+#  Deploy to VM2 using Deployment Group
+- job: DeployJob
+  displayName: 'Deploy to VM2 using Deployment Group'
+  pool:
+    name: App-VMs  # 👉 Change to match your Deployment Group name in Azure DevOps
+  steps:
+  - checkout: none  # Do not checkout code again on VM
 
-# SSH into VM2, download from JFrog, and restart app
-- script: |
-    chmod 600 $(sshKey.secureFilePath)
-
-    echo "Deploying app on remote VM by pulling from JFrog Artifactory..."
-    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no azureuser@4.172.227.190 << EOF
+  - script: |
       mkdir -p /home/azureuser/app
       cd /home/azureuser/app
 
@@ -51,5 +48,4 @@ steps:
       echo "Restarting app..."
       pkill -f 'java -jar' || true
       nohup java -jar app.jar > app.log 2>&1 &
-    EOF
-  displayName: 'Deploy to VM2 from JFrog'
+    displayName: 'Download & Restart Spring Boot'
