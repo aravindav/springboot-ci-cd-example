@@ -46,7 +46,7 @@ steps:
       cd /home/azureuser/app
 
       echo "Downloading jar from JFrog..."
-      wget --user=admin --password=your-jfrog-password "http://4.174.129.30:8082/artifactory/libs-release-local/com/example/springboot-ci-cd/1.0.0/springboot-ci-cd-1.0.0.jar" -O app.jar
+      wget --user=admin --password=Coding@123 "http://4.174.129.30:8082/artifactory/libs-release-local/com/example/springboot-ci-cd/1.0.0/springboot-ci-cd-1.0.0.jar" -O app.jar
 
       echo "Restarting app..."
       pkill -f 'java -jar' || true
