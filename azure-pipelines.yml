@@ -20,7 +20,7 @@ stages:
     - task: DownloadSecureFile@1
       name: mavenSettings
       inputs:
-        secureFile: 'settings.xml'
+        secureFile: 'settings.xml'  # 👉 Make sure this matches your secure file name
 
     - script: |
         mkdir -p ~/.m2
@@ -39,21 +39,23 @@ stages:
   displayName: 'Deploy to VM2'
   dependsOn: Build
   jobs:
-  - job: DeployJob
-    displayName: 'Deploy to VM2 using Deployment Group'
-    pool:
-      name: App-VMs  # ✅ Use your Deployment Group name exactly!
-    steps:
-    - checkout: none
+  - deployment: DeployJob
+    displayName: 'Deploy to VM2 via Environment'
+    environment: 'App-VMs'  # ✅ Use your exact Environment name as seen in Azure DevOps
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: none
 
-    - script: |
-        mkdir -p /home/azureuser/app
-        cd /home/azureuser/app
+          - script: |
+              mkdir -p /home/azureuser/app
+              cd /home/azureuser/app
 
-        echo "Downloading jar from JFrog..."
-        wget --user=admin --password=Coding@123 "http://4.174.129.30:8082/artifactory/libs-release-local/com/example/springboot-ci-cd/1.0.0/springboot-ci-cd-1.0.0.jar" -O app.jar
+              echo "Downloading jar from JFrog..."
+              wget --user=admin --password=Coding@123 "http://4.174.129.30:8082/artifactory/libs-release-local/com/example/springboot-ci-cd/1.0.0/springboot-ci-cd-1.0.0.jar" -O app.jar
 
-        echo "Restarting app..."
-        pkill -f 'java -jar' || true
-        nohup java -jar app.jar > app.log 2>&1 &
-      displayName: 'Download & Restart Spring Boot'
+              echo "Restarting app..."
+              pkill -f 'java -jar' || true
+              nohup java -jar app.jar > app.log 2>&1 &
+            displayName: 'Download & Restart Spring Boot'
