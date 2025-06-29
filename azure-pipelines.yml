@@ -27,7 +27,7 @@ steps:
   inputs:
     mavenPomFile: 'pom.xml'
     goals: 'clean deploy sonar:sonar'
-    options: '-DskipTests -Dsonar.login=$(SONAR_TOKEN) -Dsonar.host.url=http://<sonarqube-vm-ip>:9000'
+    options: '-DskipTests -Dsonar.login=$(SONAR_TOKEN) -Dsonar.host.url=http://20.151.164.85:9000'
   displayName: 'Build, Deploy to JFrog, & SonarQube Analysis'
 
 # Download SSH private key for VM2
@@ -41,12 +41,12 @@ steps:
     chmod 600 $(sshKey.secureFilePath)
 
     echo "Deploying app on remote VM by pulling from JFrog Artifactory..."
-    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no azureuser@<vm2-ip> << EOF
+    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no azureuser@4.172.227.190 << EOF
       mkdir -p /home/azureuser/app
       cd /home/azureuser/app
 
       echo "Downloading jar from JFrog..."
-      wget --user=admin --password=your-jfrog-password "http://<jfrog-vm-ip>:8082/artifactory/libs-release-local/com/example/springboot-ci-cd/1.0.0/springboot-ci-cd-1.0.0.jar" -O app.jar
+      wget --user=admin --password=your-jfrog-password "http://4.174.129.30:8082/artifactory/libs-release-local/com/example/springboot-ci-cd/1.0.0/springboot-ci-cd-1.0.0.jar" -O app.jar
 
       echo "Restarting app..."
       pkill -f 'java -jar' || true
