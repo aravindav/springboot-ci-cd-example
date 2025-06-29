@@ -42,7 +42,7 @@ stages:
   - job: DeployJob
     displayName: 'Deploy to VM2 using Deployment Group'
     pool:
-      name: App-VMs  # 👉 Your Deployment Group name
+      name: springboot-ci-cd-App-VMs  # 👉 Your Deployment Group name
     steps:
     - checkout: none
 
