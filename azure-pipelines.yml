@@ -10,30 +10,46 @@ variables:
 - group: ci-cd-secrets
 
 steps:
+# Download Maven settings.xml from secure files
+- task: DownloadSecureFile@1
+  name: mavenSettings
+  inputs:
+    secureFile: 'settings.xml'  # Name exactly as uploaded
+
+# Configure Maven settings.xml in agent
+- script: |
+    mkdir -p ~/.m2
+    cp $(mavenSettings.secureFilePath) ~/.m2/settings.xml
+  displayName: 'Configure Maven settings.xml'
+
+# Build, push to JFrog, and run SonarQube analysis
 - task: Maven@3
   inputs:
     mavenPomFile: 'pom.xml'
-    goals: 'clean verify sonar:sonar'
-    options: '-DskipTests -Dsonar.login=$(SONAR_TOKEN) -Dsonar.host.url=http://20.151.164.85:9000'
-  displayName: 'Build, Verify & SonarQube Analysis'
+    goals: 'clean deploy sonar:sonar'
+    options: '-DskipTests -Dsonar.login=$(SONAR_TOKEN) -Dsonar.host.url=http://<sonarqube-vm-ip>:9000'
+  displayName: 'Build, Deploy to JFrog, & SonarQube Analysis'
 
+# Download SSH private key for VM2
 - task: DownloadSecureFile@1
   name: sshKey
   inputs:
-    secureFile: 'ci-cd-vm_key.pem'  # Update this if your key file name is different
+    secureFile: 'ci-cd-vm_key.pem'
 
+# SSH into VM2, download from JFrog, and restart app
 - script: |
     chmod 600 $(sshKey.secureFilePath)
 
-    echo "Creating app directory on remote VM..."
-    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no azureuser@4.172.227.190 'mkdir -p /home/azureuser/app'
+    echo "Deploying app on remote VM by pulling from JFrog Artifactory..."
+    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no azureuser@<vm2-ip> << EOF
+      mkdir -p /home/azureuser/app
+      cd /home/azureuser/app
 
-    echo "Copying JAR to remote VM..."
-    scp -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no target/*.jar azureuser@4.172.227.190:/home/azureuser/app/app.jar
+      echo "Downloading jar from JFrog..."
+      wget --user=admin --password=your-jfrog-password "http://<jfrog-vm-ip>:8082/artifactory/libs-release-local/com/example/springboot-ci-cd/1.0.0/springboot-ci-cd-1.0.0.jar" -O app.jar
 
-    echo "Restarting Spring Boot app..."
-    ssh -i $(sshKey.secureFilePath) -o StrictHostKeyChecking=no azureuser@4.172.227.190 << EOF
+      echo "Restarting app..."
       pkill -f 'java -jar' || true
-      nohup java -jar /home/azureuser/app/app.jar > /home/azureuser/app/app.log 2>&1 &
+      nohup java -jar app.jar > app.log 2>&1 &
     EOF
-  displayName: 'Deploy to VM2'
+  displayName: 'Deploy to VM2 from JFrog'
