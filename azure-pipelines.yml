@@ -9,43 +9,51 @@ pool:
 variables:
 - group: ci-cd-secrets
 
-steps:
-# Download Maven settings.xml from secure files
-- task: DownloadSecureFile@1
-  name: mavenSettings
-  inputs:
-    secureFile: 'settings.xml'  # Make sure this matches your secure file name
+stages:
+# 💥 Build stage
+- stage: Build
+  displayName: 'Build and Analyze'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build, Push to JFrog, & SonarQube'
+    steps:
+    - task: DownloadSecureFile@1
+      name: mavenSettings
+      inputs:
+        secureFile: 'settings.xml'
 
-#  Configure Maven settings.xml
-- script: |
-    mkdir -p ~/.m2
-    cp $(mavenSettings.secureFilePath) ~/.m2/settings.xml
-  displayName: 'Configure Maven settings.xml'
+    - script: |
+        mkdir -p ~/.m2
+        cp $(mavenSettings.secureFilePath) ~/.m2/settings.xml
+      displayName: 'Configure Maven settings.xml'
 
-# Build, push to JFrog, SonarQube analysis
-- task: Maven@3
-  inputs:
-    mavenPomFile: 'pom.xml'
-    goals: 'clean deploy sonar:sonar'
-    options: '-DskipTests -Dsonar.login=$(SONAR_TOKEN) -Dsonar.host.url=http://20.151.164.85:9000'
-  displayName: 'Build, Push to JFrog, & SonarQube Analysis'
+    - task: Maven@3
+      inputs:
+        mavenPomFile: 'pom.xml'
+        goals: 'clean deploy sonar:sonar'
+        options: '-DskipTests -Dsonar.login=$(SONAR_TOKEN) -Dsonar.host.url=http://20.151.164.85:9000'
+      displayName: 'Build, Push to JFrog, & SonarQube Analysis'
 
-#  Deploy to VM2 using Deployment Group
-- job: DeployJob
-  displayName: 'Deploy to VM2 using Deployment Group'
-  pool:
-    name: App-VMs  # 👉 Change to match your Deployment Group name in Azure DevOps
-  steps:
-  - checkout: none  # Do not checkout code again on VM
+# 💥 Deploy stage
+- stage: Deploy
+  displayName: 'Deploy to VM2'
+  dependsOn: Build
+  jobs:
+  - job: DeployJob
+    displayName: 'Deploy to VM2 using Deployment Group'
+    pool:
+      name: App-VMs  # 👉 Your Deployment Group name
+    steps:
+    - checkout: none
 
-  - script: |
-      mkdir -p /home/azureuser/app
-      cd /home/azureuser/app
+    - script: |
+        mkdir -p /home/azureuser/app
+        cd /home/azureuser/app
 
-      echo "Downloading jar from JFrog..."
-      wget --user=admin --password=Coding@123 "http://4.174.129.30:8082/artifactory/libs-release-local/com/example/springboot-ci-cd/1.0.0/springboot-ci-cd-1.0.0.jar" -O app.jar
+        echo "Downloading jar from JFrog..."
+        wget --user=admin --password=Coding@123 "http://4.174.129.30:8082/artifactory/libs-release-local/com/example/springboot-ci-cd/1.0.0/springboot-ci-cd-1.0.0.jar" -O app.jar
 
-      echo "Restarting app..."
-      pkill -f 'java -jar' || true
-      nohup java -jar app.jar > app.log 2>&1 &
-    displayName: 'Download & Restart Spring Boot'
+        echo "Restarting app..."
+        pkill -f 'java -jar' || true
+        nohup java -jar app.jar > app.log 2>&1 &
+      displayName: 'Download & Restart Spring Boot'
